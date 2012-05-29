@@ -340,6 +340,11 @@ class Section(object):
         -------
             A sequence of annotation objects.
         """
+        def apparent_dip(theta, ve):
+            theta = np.radians(theta)
+            dx, dy = np.cos(theta), np.sin(theta)
+            return np.arctan(ve * dy / dx)
+
         ve = self.ax.get_aspect()
         if values is None:
             values = range(0, 90, 15)
@@ -350,14 +355,15 @@ class Section(object):
 
         artists = []
         for theta in values:
-            x = width * np.cos(np.radians(theta))
-            y = ve * width * np.sin(np.radians(theta))
+            app_theta = apparent_dip(theta, ve)
+            x = width * np.cos(app_theta)
+            y = width * np.sin(app_theta)
             ha = {1:'left', -1:'right'}[dx]
 
             props = dict(xy=pos, xytext=(dx * x, dy * y), 
                         xycoords='axes fraction', textcoords='offset points', 
-                        va='center', ha=ha, 
-                        rotation=dx*dy*theta, rotation_mode='anchor',
+                        va='center', ha=ha, rotation_mode='anchor',
+                        rotation=dx*dy*np.degrees(app_theta), 
                         arrowprops=dict(arrowstyle='-', shrinkA=0, shrinkB=4))
             kwargs.update(props)
 
