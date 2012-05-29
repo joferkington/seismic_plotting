@@ -7,7 +7,6 @@ setup(
     author = 'Joe Kington',
     author_email = 'joferkington@gmail.com',
     license = 'LICENSE',
-    packages = ['section'],
     install_requires = [
         'matplotlib >= 0.98',
         'numpy >= 1.1',
