@@ -10,6 +10,30 @@ import utilities
 class Section(object):
     def __init__(self, vol, x, y, ax, colormap, zmin=None, zmax=None, ve=2.0, 
                  name='Cross Section', resample_factor=2):
+        """
+        Make a new cross section along `x` and `y` from seismic data in `vol`
+        on the matplotlib axes `ax`.
+
+        Parameters:
+        -----------
+            vol : A geoprobe volume object containing the seismic data to 
+                be displayed on the cross section.
+            x : A sequence of x-coordinates (in inline/crossline) representing
+                points along the cross section line
+            y : A sequence of y-coordinates (in inline/crossline) representing
+                points along the cross section line
+            ax : A matplotlib axes
+            colormap : A matplotlib colormap
+            zmin : The minimum (top) depth/time for the cross section
+            zmax : The maximum (bottom) depth/time for the cross section
+            ve : The vertical exaggeration of the displayed cross section. If
+                the seismic data is in depth, then this is the true vertical 
+                exaggeration. 
+            name : The title of the cross section
+            resample_factor : Interpolation factor for the "raw" seismic data.
+                If > 1, the seismic data will be linearly interpolated before
+                display.
+        """
         self.ax = ax
         self.x, self.y = np.asarray(x), np.asarray(y)
         self.vol = vol
@@ -38,12 +62,14 @@ class Section(object):
         return data, extent
 
     def update_position(self, x, y):
+        # TODO: Finish this...
         self.x, self.y = x, y
         data, extent = self.extract_section()
         self.im.set_data(data)
         self.im.set_extent(extent)
 
     def update_horizons(self, hor_set):
+        # TODO: Finish this...
         for line, hor in zip(self.horizon_lines, hor_set.horizons):
             x, y = self.slice_horizon(hor)
             line.set_data(x, y)
@@ -105,6 +131,22 @@ class Section(object):
         return self.ax.axvline(x, **kwargs)
 
     def label_endpoints(self, template='XL: {}, IL: {}', **kwargs):
+        """
+        Plot labeled endpoint coordinates on the section. 
+        Additional keyword arguments are passed on to `annotate`, which allows
+        the position, style, etc of the labels to be controlled. By default,
+        the labels will be something like "<-- XL: x0, IL: y0" and 
+        "XL: x1, IL: y1 -->", with arrows pointing to each lower corner.
+
+        Parameters:
+        -----------
+            template : The formatting template for the endpoint coords.
+            Additional keyword arguments are passed on to `annotate`
+
+        Returns:
+        --------
+            A 2-item list of matplotlib Annotation objects
+        """
         kwargs.pop('xy', None)
         kwargs['textcoords'] = kwargs.get('textcoords', 'offset points')
         kwargs['xycoords'] = kwargs.get('xycoords', 'axes fraction')
