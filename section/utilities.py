@@ -86,10 +86,10 @@ class Shader(mpl.colors.LightSource):
         return intensity
 
     def shade_rgb(self, rgb, elevation, fraction=1.0, mode='overlay'):
-        intensity = self.hillshade(elevation, fraction)
-        intensity = intensity[:,:,np.newaxis]
         if mode == 'hsv':
             return mpl.colors.LightSource.shade_rgb(rgb, elevation)
+        intensity = self.hillshade(elevation, fraction)
+        intensity = intensity[:,:,np.newaxis]
         func = {'overlay':self.overlay, 'soft':self.soft_light}[mode]
         return func(rgb, intensity)
 
