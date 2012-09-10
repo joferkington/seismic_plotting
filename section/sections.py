@@ -8,6 +8,9 @@ import shapely.geometry
 import utilities
 
 class Section(object):
+    """
+    An "arbitrary" cross section plot extracted from a geoprobe volume.
+    """
     def __init__(self, vol, x, y, ax, colormap, zmin=None, zmax=None, ve=2.0, 
                  name='Cross Section', resample_factor=2):
         """
@@ -53,6 +56,23 @@ class Section(object):
         self.loc_line = None
 
     def extract_section(self, vol=None):
+        """
+        Extract data along this cross section's profile from a geoprobe volume. 
+        In most cases, this method will only be called internally, and you won't
+        need to call it explictly. However, it is often useful for constructing
+        "unusual" plots.
+
+        Parameters
+        ----------
+            vol : (optional) A geoprobe volume instance
+                Defaults to the geoprobe volume specified at initalization.
+        Returns
+        -------
+            data : A 2D numpy array of seismic data
+            extent : A 4-element list of the minimum and maximum distances along
+                this cross section's profile line and the minimum and maximum
+                z-values of the seismic data.
+        """
         if vol is None:
             vol = self.vol
         data, xi, yi = vol.extract_section(self.x, self.y, self.zmin, self.zmax)
@@ -76,9 +96,23 @@ class Section(object):
 
     @property
     def line(self):
+        """
+        A shapely LineString representing this cross section's profile line.
+        """
         return shapely.geometry.LineString(zip(self.x, self.y))
 
     def calculate_distance_along_section(self, xi, yi):
+        """
+        Calculates the distance along this cross section's profile line to the
+        specified point. 
+
+        Parameters:
+        -----------
+            xi, yi : Sequences of x and y coordinates
+        Returns:
+        --------
+            distance : The distance along the profile line to the point
+        """
         start, _ = self.project_onto(xi[0], yi[0])
         distance = np.hypot(self.dxw * np.diff(xi), 
                             self.dyw * np.diff(yi))
