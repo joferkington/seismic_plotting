@@ -82,6 +82,7 @@ class Section(object):
         return data, extent
 
     def update_position(self, x, y):
+        """Not fully implemented."""
         # TODO: Finish this...
         self.x, self.y = x, y
         data, extent = self.extract_section()
@@ -89,6 +90,7 @@ class Section(object):
         self.im.set_extent(extent)
 
     def update_horizons(self, hor_set):
+        """Not fully implemented."""
         # TODO: Finish this...
         for line, hor in zip(self.horizon_lines, hor_set.horizons):
             x, y = self.slice_horizon(hor)
@@ -120,6 +122,18 @@ class Section(object):
         return distance
 
     def plot_image(self, **kwargs):
+        """
+        Extract data for the cross section (i.e. call self.extract_section())
+        and plot it on the axes from the plot (self.ax) using the approriate
+        parameters (e.g. self.colormap, self.ve, etc).
+
+        Basically, this displays the seismic data along the cross section. 
+        Usually this will be called by the SectionManager, and you won't need to
+        call it directly. However, it is not called during initialization of
+        the Section object to give more flexibility in plotting.
+
+        Keyword arguments are passed on to matplotlib's ``imshow``.
+        """
         data, extent = self.extract_section()
         self.im = self.ax.imshow(data, origin='lower', extent=extent, 
                 interpolation='bilinear', aspect=self.ve, cmap=self.colormap,
@@ -128,23 +142,89 @@ class Section(object):
             self.ax.invert_yaxis()
         return self.im
 
-    def plot_scalebar(self, length=1, title=None):
+    def plot_scalebar(self, length=1, title=None, loc='upper right'):
+        """
+        Plot a scalebar on the cross section.
+
+        Parameters:
+        -----------
+            length : number, default=1
+                The length of the scale bar in world units (e.g. meters)
+            title: string, default="{length} world units"
+                The title/label for the scale bar
+            loc: int or string
+                The position of the scale bar. Valid parameters are:
+                    'upper right'  : 1,
+                    'upper left'   : 2,
+                    'lower left'   : 3,
+                    'lower right'  : 4,
+                    'right'        : 5,
+                    'center left'  : 6,
+                    'center right' : 7,
+                    'lower center' : 8,
+                    'upper center' : 9,
+                    'center'       : 10,
+        Returns:
+        --------
+            A matplotlib AnchoredSizeBar artist.
+        """
         if title is None:
             title = '{} world units'.format(length)
         self.sizebar = AnchoredSizeBar(self.ax.transData, length,
-                                       title, loc=1, pad=0.5, 
+                                       title, loc=loc, pad=0.5, 
                                        borderpad=0.5, sep=5, frameon=True)
         self.ax.add_artist(self.sizebar)
         return self.sizebar
 
     def plot_on_map(self, mapview, **kwargs):
+        """
+        Plot a cross section line for the cross section on the map.
+        Usually this will be called by the SectionManager, and you won't need to
+        call it directly.
+
+        The style of line plotted is controlled by the supplied keyword 
+        arguments (which are passed on to matplotlib's ``plot``).
+
+        Parameters:
+        -----------
+            mapview : A section.Map instance.
+
+            Additional keyword arguments are pass on to maplotlib.pyplot.plot.
+
+        Returns:
+        --------
+            A matplotlib.Line2D artist.
+        """
         kwargs.pop('label', None)
         kwargs['label'] = self.name
         self.loc_line, = mapview.ax.plot(self.x, self.y, **kwargs)
         return self.loc_line
 
-    def seafloor_mute(self, seafloor, pad=0, color=(1.0, 1.0, 1.0), value=None):
-        seafloor = geoprobe.horizon(seafloor)
+    def seafloor_mute(self, seafloor, pad=0, color='white', value=None):
+        """
+        "Mute" (i.e. plot a filled polygon over) the seismic data above the
+        seafloor.
+
+        Parameters:
+        -----------
+            seafloor: string filename or geoprobe.horizon instance
+                The seafloor horizon (or filename of one) to use.
+            pad: number
+                The vertical (above the seafloor) padding in z (time or depth)
+                units between the actual horizon values and the bottom of the
+                filled polygon.
+            color: matplotlib color specifier (e.g. string or tuple of floats)
+                The color of the filled polygon.
+            value: number (default=None)
+                If specified, the "color" kwarg is ignored, and self.colormap
+                is used to choose the color based on the input "value".
+
+        Returns:
+        --------
+            A matplotlib PolyCollection artist.
+        """
+        if isinstance(seafloor, basestring):
+            seafloor = geoprobe.horizon(seafloor)
         dist, z = self.slice_horizon(seafloor)
         z -= pad
         if value is not None:
@@ -154,6 +234,35 @@ class Section(object):
         return collection
 
     def mark_intersection(self, *args, **kwargs):
+        """
+        Plot a vertical line on this section marking its intersection with or
+        nearest approach to another cross section (or other linear feature).
+
+        Parameters:
+        -----------
+            Either another Section object or x and y coordinates of a linear
+            feature
+
+            Additional keyword arguments are passed onto matplotlib's
+            ``axvline``.
+
+        Returns:
+        --------
+            A matplotlib Line2D artist.
+
+        Examples:
+        ---------
+
+            Plot the intersection with another Section as a solid blue line.
+
+            >>> self.mark_intersection(other_section)
+
+            Plot the intersection with another linear feature as a dashed red
+            line.
+
+            >>> self.mark_intersection([x0,x1,x2], [y0,y1,y2], linestyle='--',
+            ...                        color='red')
+        """ 
         if len(args) == 1:
             other = args[0]
             x, y = other.x, other.y
@@ -249,8 +358,11 @@ class Section(object):
         return artists
 
     def project_onto(self, *args):
-        """Returns the distance along the section to the point/line defined by
-        *x*, *y* and the mininum distance between it and the section."""
+        """
+        Returns the distance along the section to the point/line defined by
+        *x*, *y* and the mininum distance between it and the section.
+        
+        """
         if len(args) == 1:
             # Assume a shapely geometry has been passed in
             other = args[0]
@@ -321,6 +433,9 @@ class Section(object):
         fig.savefig(filename, **kwargs)
 
 class Section2D(Section):
+    """
+    A cross section from a 2D line instead of extracted from a 3D volume.
+    """
     def __init__(self, line, ax, colormap, dx=1.0, dy=1.0, zmin=None, zmax=None, 
                  ve=2.0, name='2D Section', resample_factor=2):
         self.dxw, self.dyw = dx, dy
@@ -352,7 +467,18 @@ class Section2D(Section):
         return data, extent
 
 class CoRenderedSection(Section):
+    """
+    A cross section with a second data volume (usually a coherence/sembelance
+    volume) blended with the seismic data.  This esentially treats the coherence
+    data as "topography" and overlays a "hillshade" effect on top of the 
+    original data."""
     def __init__(self, vol, coherence_vol, x, y, ax, colormap, **kwargs):
+        """
+        Identical to initializing a Section instance, except for one argument.
+
+        In addition to ``vol``, this takes a second geoprobe volume 
+        (``coherence_vol``) to use as the co-rendered data.
+        """
         self.coherence_vol = coherence_vol
         Section.__init__(self, vol, x, y, ax, colormap, **kwargs)
 
@@ -377,6 +503,10 @@ class CoRenderedSection(Section):
         return self.im
 
 class SketchSection(Section):
+    """
+    A cross section with the original data filtered to appear similar to a line
+    drawing.
+    """
     def plot_image(self, radius=4, **kwargs):
         data, extent = self.extract_section()
         rgb = self.colormap(data.astype(float) / 255)
