@@ -1,4 +1,4 @@
-from section import ExampleSections
+from seismic_plotting import ExampleSections
 
 basedir = '/data/MyCode/Geoprobe/distribution/examples/data/Horizons/'
 horizons = [basedir+item for item in ['seafloor.hzn', 'channels.hzn']]

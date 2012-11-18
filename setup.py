@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name = 'section',
+    name = 'seismic_plotting',
     version = '0.1',
     description = "Cross Section Plotting with Geoprobe Datasets",
     author = 'Joe Kington',
